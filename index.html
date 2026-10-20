@@ -86,10 +86,16 @@
   .up-empty { color: var(--muted); font-size: 14px; margin: 0; }
 
   /* ---- what changed ---- */
-  .changes { margin: 16px 0 0; background: var(--surface); border: 2px solid var(--accent); border-radius: 18px; padding: 12px 14px 14px; box-shadow: var(--shadow); }
-  .ch-head { display: flex; align-items: center; gap: 10px; }
-  .ch-head h2 { margin: 0; flex: 1; font-size: 17px; color: var(--accent); }
-  .ch-head .text-btn { height: 34px; font-size: 13px; }
+  .changes { margin: 16px 0 0; background: var(--surface); border: 2px solid var(--accent); border-radius: 18px; padding: 10px 14px 12px; box-shadow: var(--shadow); }
+  .ch-head { margin: 0; font-size: inherit; }
+  .ch-toggle { display: flex; align-items: center; gap: 10px; width: 100%; padding: 2px 0; border: 0; background: none; text-align: left; }
+  .ch-toggle .ttl { flex: 0 0 auto; font-size: 17px; font-weight: 800; color: var(--accent); }
+  .ch-toggle .ch-count { margin-left: 0; }
+  .ch-toggle .summary { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ch-chev { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid var(--line); border-radius: 50%; color: var(--accent); transition: transform .15s; }
+  .ch-chev::before { content: ''; width: 7px; height: 7px; border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: translateY(-2px) rotate(45deg); }
+  .ch-toggle[aria-expanded="true"] .ch-chev { transform: rotate(180deg); }
+  .ch-body { margin-top: 6px; }
   .ch-count {
     display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; margin-left: 8px;
     border-radius: 999px; background: var(--today); color: #fff; font-size: 12px; font-weight: 800; vertical-align: 2px;
@@ -210,6 +216,7 @@
     .pill { font-size: 10px; padding: 3px 3px; border-radius: 7px; border-width: 1.5px; margin-top: 3px; overflow-wrap: break-word; }
     .pill.fresh::after { top: -4px; right: -3px; width: 9px; height: 9px; }
     .ch-diffs .k { flex-basis: 100%; }
+    .ch-toggle .late { display: none; }
     .cal { border-radius: 18px; }
     .up-when { flex-basis: 64px; }
     .up-pills .pill { font-size: 12px; padding: 4px 8px; border-radius: 9px; }
@@ -597,7 +604,11 @@ date,end_date,time,course,type,title,description,link
      published as CSV and read here, so the history lives in the sheet and is identical
      on every device. Nothing about it is stored per visitor (only an offline copy). */
   const LOG_CACHE_KEY = 'batchcal:log:' + (CONFIG.changelogUrl || 'none');
-  const logCollapsed = () => (matchMedia('(max-width: 600px)').matches ? 3 : 8);   // keep the calendar on the first phone screen
+  const logCollapsed = () => (matchMedia('(max-width: 600px)').matches ? 3 : 8);   // entries shown before "Show all"
+  const PANEL_KEY = 'batchcal:logPanel';
+  const readPref = k => { try { return localStorage.getItem(k); } catch (_) { return null; } };
+  const savePref = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
+  state.logPanel = readPref(PANEL_KEY) === '1';        // the drop-down starts closed so the calendar stays on top
   const ACTION_LABEL = { changed: 'Changed', added: 'Added', removed: 'Removed' };
 
   function parseLog(text) {
@@ -736,27 +747,54 @@ date,end_date,time,course,type,title,description,link
       return b;
     };
 
-    const head = el('div', 'ch-head');
-    const h = el('h2', '', 'Change log');
-    h.id = 'chTitle';
-    if (recent) h.appendChild(el('span', 'ch-count', String(recent)));
-    head.appendChild(h);
-    if (cards.length > collapsed) head.appendChild(toggle());
+    // The whole header is a drop-down button. Open/closed is a display preference kept on this device.
+    const open = state.logPanel;
+    const latest = cards[0];
+    const [sumMain, sumTail] = !latest ? ['No edits yet', '']
+      : recent ? [`${recent} recent edit${recent === 1 ? '' : 's'}`, ` · latest ${fmtStamp(latest.at)}`]
+      : ['No recent edits', ` · last ${fmtStamp(latest.at)}`];
+
+    const head = el('h2', 'ch-head');
+    head.id = 'chTitle';
+    const btn = el('button', 'ch-toggle');
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-controls', 'chBody');
+    btn.appendChild(el('span', 'ttl', 'Change log'));
+    if (recent) btn.appendChild(el('span', 'ch-count', String(recent)));
+    const sum = el('span', 'summary', sumMain);
+    if (sumTail) sum.appendChild(el('span', 'late', sumTail));      // dropped on narrow phones so it never cuts off mid-word
+    btn.appendChild(sum);
+    btn.appendChild(el('span', 'ch-chev'));
+    btn.addEventListener('click', () => {
+      state.logPanel = !state.logPanel;
+      savePref(PANEL_KEY, state.logPanel ? '1' : '0');
+      renderChanges();
+      const again = box.querySelector('.ch-toggle');
+      if (again) again.focus({ preventScroll: true });
+    });
+    head.appendChild(btn);
     box.appendChild(head);
 
+    const body = el('div', 'ch-body');
+    body.id = 'chBody';
+    body.hidden = !open;
+    box.appendChild(body);
+    if (!open) return;
+
     const since = (started ? ` · logging since ${fmtStamp(started.at)}` : '') + (state.logOffline ? ' · offline copy' : '');
-    box.appendChild(el('p', 'ch-sub', cards.length ? `Every edit made in the sheet, newest first${since}` : `No edits yet${since}`));
+    body.appendChild(el('p', 'ch-sub', cards.length ? `Every edit made in the sheet, newest first${since}` : `No edits yet${since}`));
 
     const limit = state.logOpen ? Infinity : collapsed;
     let day = '', group = null, shown = 0;
     for (const c of cards) {
       if (shown >= limit) break;
       const k = keyOf(c.at);
-      if (k !== day) { group = el('div', 'ch-group'); group.appendChild(el('h3', '', dayTitle(k))); box.appendChild(group); day = k; }
+      if (k !== day) { group = el('div', 'ch-group'); group.appendChild(el('h3', '', dayTitle(k))); body.appendChild(group); day = k; }
       group.appendChild(logCard(c));
       shown++;
     }
-    if (cards.length > collapsed) box.appendChild(toggle());
+    if (cards.length > collapsed) body.appendChild(toggle());
   }
 
   /* ------------------------------ rendering ------------------------------ */
