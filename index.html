@@ -361,7 +361,8 @@ date,end_date,time,course,type,title,description,link
     // Publish the "Changelog" tab (created by changelog.gs) as CSV and paste its link here.
     // Leave it empty to hide the change log.
     changelogUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vST8fKsJJ5dbj0xhutOtjI-H8gP_6BOjZ52lWI4b4SL1OKvAFNvMIYz5R1a_JxKJSMGKoWK4NDSTuKt/pub?gid=1238233198&single=true&output=csv',
-    recentDays: 3,        // items edited within this many days get a dot on the calendar
+    showDots: false,      // true = put a dot on items edited within the last `recentDays` days
+    recentDays: 3,        // how many days count as "recent" (dots and the change-log summary)
   };
   /* ============================================================================= */
 
@@ -666,7 +667,7 @@ date,end_date,time,course,type,title,description,link
   // Calendar items edited within the last CONFIG.recentDays days get a dot. Same for everyone.
   function markRecent() {
     state.fresh = new Set();
-    if (!state.log) return;
+    if (!CONFIG.showDots || !state.log) return;
     const cutoff = Date.now() - CONFIG.recentDays * 864e5;
     const keys = new Set();
     for (const e of state.log) if ((e.action === 'added' || e.action === 'changed') && e.at.getTime() >= cutoff) keys.add(e.date + '\u0001' + e.item);
