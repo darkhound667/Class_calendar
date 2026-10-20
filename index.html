@@ -85,6 +85,42 @@
   .up-pills .pill { margin: 0; width: auto; }
   .up-empty { color: var(--muted); font-size: 14px; margin: 0; }
 
+  /* ---- what changed ---- */
+  .changes { margin: 16px 0 0; background: var(--surface); border: 2px solid var(--accent); border-radius: 18px; padding: 12px 14px 14px; box-shadow: var(--shadow); }
+  .ch-head { display: flex; align-items: center; gap: 10px; }
+  .ch-head h2 { margin: 0; flex: 1; font-size: 17px; color: var(--accent); }
+  .ch-head .text-btn { height: 34px; font-size: 13px; }
+  .ch-count {
+    display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; margin-left: 8px;
+    border-radius: 999px; background: var(--today); color: #fff; font-size: 12px; font-weight: 800; vertical-align: 2px;
+  }
+  .ch-sub { margin: 2px 0 4px; color: var(--muted); font-size: 13px; }
+  .ch-group { margin-top: 10px; }
+  .ch-group h3 { margin: 0 0 2px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .ch-item { padding: 8px 0; border-top: 1.5px solid var(--line); }
+  .ch-title {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; padding: 0; border: 0;
+    background: none; text-align: left; font-weight: 800; font-size: 15px;
+  }
+  .ch-title .lbl { overflow-wrap: anywhere; }
+  .ch-title .when { font-weight: 600; font-size: 13px; color: var(--muted); }
+  .ch-title.static { cursor: default; }
+  .ch-title.gone .lbl { text-decoration: line-through; color: var(--muted); }
+  .ch-time { min-width: 62px; font-size: 13px; font-weight: 700; color: var(--muted); }
+  .ch-act { border: 2px solid; border-radius: 8px; padding: 1px 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+  .ch-act.changed { background: var(--ex-bg); border-color: var(--ex-line); color: var(--ex-ink); }
+  .ch-act.added   { background: var(--no-bg); border-color: var(--no-line); color: var(--no-ink); }
+  .ch-act.removed { background: var(--dl-bg); border-color: var(--dl-line); color: var(--dl-ink); }
+  .ch-note { margin: 6px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+  .cellref { margin-left: auto; font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--muted); }
+  .ch-diffs { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+  .ch-diffs li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+  .ch-diffs .k { flex: 0 0 62px; color: var(--muted); font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+  .ch-diffs s { color: var(--muted); text-decoration-thickness: 1.5px; overflow-wrap: anywhere; }
+  .ch-diffs b { color: var(--ink); overflow-wrap: anywhere; }
+  .ch-diffs .arrow { color: var(--accent); font-weight: 800; }
+  .ch-more { margin-top: 8px; height: 34px; font-size: 13px; }
+
   /* ---- controls ---- */
   .monthbar { display: flex; align-items: center; gap: 8px; margin: 20px 0 12px; }
   .monthbar h2 { margin: 0; flex: 1; font-size: 22px; letter-spacing: -.01em; }
@@ -136,10 +172,17 @@
   .cell.past .pill { opacity: .55; }
 
   .pill {
+    position: relative;
     display: block; width: 100%; margin-top: 5px; padding: 5px 7px; text-align: left;
     border: 2px solid; border-radius: 10px; font-size: 13px; font-weight: 800; line-height: 1.2;
     overflow-wrap: break-word;
   }
+  /* dot on anything new or edited since the visitor last marked the changes as seen */
+  .pill.fresh::after {
+    content: ''; position: absolute; top: -5px; right: -4px; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--today); border: 2px solid var(--surface);
+  }
+  .tag-new { margin-left: auto; flex: 0 0 auto; background: var(--today); color: #fff; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 800; }
   .pill.t-quiz     { background: var(--quiz-bg); border-color: var(--quiz-line); color: var(--quiz-ink); }
   .pill.t-deadline { background: var(--dl-bg);   border-color: var(--dl-line);   color: var(--dl-ink); }
   .pill.t-noclass  { background: var(--no-bg);   border-color: var(--no-line);   color: var(--no-ink); }
@@ -165,6 +208,8 @@
     .cell { min-height: 84px; padding: 5px 2px 6px; }
     .num { font-size: 14px; min-width: 24px; height: 24px; margin-left: 2px; }
     .pill { font-size: 10px; padding: 3px 3px; border-radius: 7px; border-width: 1.5px; margin-top: 3px; overflow-wrap: break-word; }
+    .pill.fresh::after { top: -4px; right: -3px; width: 9px; height: 9px; }
+    .ch-diffs .k { flex-basis: 100%; }
     .cal { border-radius: 18px; }
     .up-when { flex-basis: 64px; }
     .up-pills .pill { font-size: 12px; padding: 4px 8px; border-radius: 9px; }
@@ -231,6 +276,8 @@
   </header>
 
   <div id="banner" class="banner" hidden></div>
+
+  <section id="changes" class="changes" aria-labelledby="chTitle" hidden></section>
 
   <div class="monthbar">
     <h2 id="monthLabel" aria-live="polite"></h2>
@@ -304,6 +351,10 @@ date,end_date,time,course,type,title,description,link
     // While this is empty the page shows the demo data at the bottom of this file.
     csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vST8fKsJJ5dbj0xhutOtjI-H8gP_6BOjZ52lWI4b4SL1OKvAFNvMIYz5R1a_JxKJSMGKoWK4NDSTuKt/pub?gid=1439807791&single=true&output=csv',
     refreshMinutes: 5,
+    // Publish the "Changelog" tab (created by changelog.gs) as CSV and paste its link here.
+    // Leave it empty to hide the change log.
+    changelogUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vST8fKsJJ5dbj0xhutOtjI-H8gP_6BOjZ52lWI4b4SL1OKvAFNvMIYz5R1a_JxKJSMGKoWK4NDSTuKt/pub?gid=1238233198&single=true&output=csv',
+    recentDays: 3,        // items edited within this many days get a dot on the calendar
   };
   /* ============================================================================= */
 
@@ -341,6 +392,9 @@ date,end_date,time,course,type,title,description,link
     types: new Set(Object.keys(TYPES)),
     course: '',
     showPast: false,
+    log: null,             // parsed change-log entries (newest first), or null when unavailable
+    fresh: new Set(),      // ids of events edited within the last CONFIG.recentDays days
+    logOpen: false,        // "Show all" toggle in the change log
     y: new Date().getFullYear(),
     m: new Date().getMonth(),   // 0–11
   };
@@ -431,7 +485,7 @@ date,end_date,time,course,type,title,description,link
       const days = [];
       for (let k = start; k <= end; k = addDays(k, 1)) days.push(k);
       out.events.push({
-        id: out.events.length, start, end, days, type, course, label,
+        id: out.events.length, start, end, days, type, course, label, title,
         time: get(iTime), description: get(iDesc), link: get(iLink),
       });
     }
@@ -453,11 +507,12 @@ date,end_date,time,course,type,title,description,link
   /* ------------------------------ loading ------------------------------ */
   const looksLikeHtml = t => /^\s*<(!doctype|html)/i.test(t);
 
-  function remember(text) {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ text, at: Date.now() })); } catch (_) {}
+  // An offline copy only: if the sheet can't be reached, show the last copy this browser loaded.
+  function remember(text, k = CACHE_KEY) {
+    try { localStorage.setItem(k, JSON.stringify({ text, at: Date.now() })); } catch (_) {}
   }
-  function recall() {
-    try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (_) { return null; }
+  function recall(k = CACHE_KEY) {
+    try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { return null; }
   }
 
   async function load() {
@@ -488,6 +543,7 @@ date,end_date,time,course,type,title,description,link
     state.cachedAt = cachedAt;
     state.errorMsg = '';
     render();
+    if (CONFIG.changelogUrl) { await loadLog(); render(); }   // the log arrives after the calendar so it never delays it
   }
 
   /* ------------------------------ helpers ------------------------------ */
@@ -526,11 +582,181 @@ date,end_date,time,course,type,title,description,link
     return n;
   }
   function pill(e) {
-    const b = el('button', 'pill t-' + e.type, e.label);
+    const fresh = state.fresh.has(e.id);
+    const b = el('button', 'pill t-' + e.type + (fresh ? ' fresh' : ''), e.label);
     b.type = 'button';
-    b.title = e.label;
+    b.title = fresh ? `${e.label} (edited recently)` : e.label;
+    if (fresh) b.setAttribute('aria-label', `${e.label}, edited recently`);
     b.addEventListener('click', () => openDialog(e));
     return b;
+  }
+
+  /* ------------------------------ change log ------------------------------
+     The sheet's Apps Script (changelog.gs) appends a row to a "Changelog" tab for every
+     edit: when it happened, which row and cell, and the old and new value. That tab is
+     published as CSV and read here, so the history lives in the sheet and is identical
+     on every device. Nothing about it is stored per visitor (only an offline copy). */
+  const LOG_CACHE_KEY = 'batchcal:log:' + (CONFIG.changelogUrl || 'none');
+  const logCollapsed = () => (matchMedia('(max-width: 600px)').matches ? 3 : 8);   // keep the calendar on the first phone screen
+  const ACTION_LABEL = { changed: 'Changed', added: 'Added', removed: 'Removed' };
+
+  function parseLog(text) {
+    const rows = parseCSV(text);
+    if (!rows.length) return [];
+    const head = rows[0].map(h => h.trim().toLowerCase());
+    const idx = {};
+    ['time', 'action', 'row', 'cell', 'field', 'course', 'item', 'date', 'old', 'new'].forEach(n => { idx[n] = head.indexOf(n); });
+    if (idx.time < 0 || idx.action < 0) return null;               // not a change log (wrong tab linked): hide the card
+    const out = [];
+    for (let r = 1; r < rows.length; r++) {
+      const c = rows[r];
+      if (c.every(x => !x.trim())) continue;
+      const g = n => (idx[n] < 0 ? '' : (c[idx[n]] || '').trim());
+      const at = new Date(g('time'));
+      const action = g('action').toLowerCase();
+      if (isNaN(at) || !(action in ACTION_LABEL || action === 'started')) continue;
+      out.push({ n: r, at, action, row: g('row'), cell: g('cell'), field: g('field'),
+        course: g('course'), item: g('item'), date: g('date'), old: g('old'), now: g('new') });
+    }
+    return out.sort((a, b) => b.at - a.at || a.n - b.n);           // newest first; same instant keeps sheet order
+  }
+
+  // One card per edit. Several cells changed on the same row in the same instant share a card, and a
+  // paste or delete of many rows at once is a single "Added 10 items" / "Removed 10 items" card.
+  function groupLog(entries) {
+    const cards = [];
+    for (const e of entries) {
+      const last = cards[cards.length - 1];
+      const sameMoment = last && last.action === e.action && last.at.getTime() === e.at.getTime();
+      if (sameMoment && (e.action !== 'changed' || (last.item === e.item && last.date === e.date && last.row === e.row))) last.lines.push(e);
+      else cards.push({ action: e.action, at: e.at, item: e.item, course: e.course, date: e.date, row: e.row, lines: [e] });
+    }
+    return cards;
+  }
+
+  async function loadLog() {
+    if (!CONFIG.changelogUrl) return;
+    let text = null;
+    state.logOffline = false;
+    try {
+      const res = await fetch(CONFIG.changelogUrl, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      text = await res.text();
+      if (looksLikeHtml(text)) throw new Error('Changelog tab is not published as CSV');
+      remember(text, LOG_CACHE_KEY);
+    } catch (_) {
+      const c = recall(LOG_CACHE_KEY);
+      text = c && c.text ? c.text : null;
+      state.logOffline = text != null;
+    }
+    try { state.log = text == null ? null : parseLog(text); } catch (_) { state.log = null; }
+  }
+
+  // Calendar items edited within the last CONFIG.recentDays days get a dot. Same for everyone.
+  function markRecent() {
+    state.fresh = new Set();
+    if (!state.log) return;
+    const cutoff = Date.now() - CONFIG.recentDays * 864e5;
+    const keys = new Set();
+    for (const e of state.log) if ((e.action === 'added' || e.action === 'changed') && e.at.getTime() >= cutoff) keys.add(e.date + '\u0001' + e.item);
+    for (const ev of state.events) if (keys.has(ev.start + '\u0001' + ev.title)) state.fresh.add(ev.id);
+  }
+
+  const clip = (s, n = 120) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+  const showVal = v => (v === '' ? '(none)' : clip(/^\d{4}-\d{2}-\d{2}$/.test(v) ? fmtShort(v) : v));
+  const squash = s => s.toLowerCase().replace(/\s+/g, '');
+  const fmtClock = at => at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const fmtStamp = at => at.toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  function dayTitle(k) {
+    const n = dayDiff(k, todayKey());
+    const year = dateOf(k).getFullYear() !== new Date().getFullYear() ? ` ${dateOf(k).getFullYear()}` : '';
+    return (n === 0 ? 'Today · ' : n === -1 ? 'Yesterday · ' : '') + fmtShort(k) + year;
+  }
+
+  // One entry: when, what kind of edit, which item, which row, then exactly which cell(s) went from what to what.
+  function logCard(c) {
+    const item = el('div', 'ch-item');
+    const many = c.action !== 'changed' && c.lines.length > 1;       // a paste/delete of several rows at once
+    const ev = many || c.action === 'removed' ? null : state.events.find(e => e.start === c.date && e.title === c.item);
+    const label = many ? `${c.lines.length} items`
+      : c.course && !squash(c.item).includes(squash(c.course)) ? `${c.course} ${c.item}` : c.item;
+    const head = el(ev ? 'button' : 'div', 'ch-title' + (ev ? '' : ' static') + (c.action === 'removed' ? ' gone' : ''));
+    if (ev) { head.type = 'button'; head.addEventListener('click', () => openDialog(ev)); }
+    head.appendChild(el('span', 'ch-time', fmtClock(c.at)));
+    head.appendChild(el('span', 'ch-act ' + c.action, ACTION_LABEL[c.action] || c.action));
+    head.appendChild(el('span', 'lbl', label || '(untitled)'));
+    if (c.row && !many) head.appendChild(el('span', 'when', `row ${c.row}`));
+    item.appendChild(head);
+
+    if (c.action === 'changed') {
+      const ul = el('ul', 'ch-diffs');
+      for (const e of c.lines) {
+        const li = el('li');
+        li.appendChild(el('span', 'k', e.field || 'field'));
+        li.appendChild(el('s', '', showVal(e.old)));
+        li.appendChild(el('span', 'arrow', '→'));
+        li.appendChild(el('b', '', showVal(e.now)));
+        if (e.cell) li.appendChild(el('span', 'cellref', e.cell));
+        ul.appendChild(li);
+      }
+      item.appendChild(ul);
+    } else {
+      for (const e of c.lines) {
+        const body = clip(c.action === 'added' ? e.now : e.old ? `Was: ${e.old}` : '', 300);
+        const where = e.cell ? (many ? `${e.item} (${e.cell})` : `${e.cell}`) : (many ? e.item : '');
+        const text = [where && `${where}:`, body].filter(Boolean).join(' ');
+        if (text) item.appendChild(el('p', 'ch-note', text));
+      }
+    }
+    return item;
+  }
+
+  function renderChanges() {
+    const box = $('changes');
+    box.replaceChildren();
+    const log = state.log;
+    box.hidden = !CONFIG.changelogUrl || log == null || state.source === 'error';
+    if (box.hidden) return;
+
+    const started = [...log].reverse().find(e => e.action === 'started');
+    const cards = groupLog(log.filter(e => e.action !== 'started'));
+    const recent = cards.filter(c => c.at.getTime() >= Date.now() - CONFIG.recentDays * 864e5).length;
+
+    const collapsed = logCollapsed();
+    const toggle = () => {
+      const b = el('button', 'text-btn ch-more', state.logOpen ? 'Show fewer' : `Show all ${cards.length}`);
+      b.type = 'button';
+      b.addEventListener('click', () => {
+        state.logOpen = !state.logOpen;
+        renderChanges();
+        box.scrollIntoView({ block: 'nearest' });                    // collapsing a long list must not strand the reader
+        const again = box.querySelector('.ch-more');
+        if (again) again.focus({ preventScroll: true });             // keep keyboard focus on the toggle
+      });
+      return b;
+    };
+
+    const head = el('div', 'ch-head');
+    const h = el('h2', '', 'Change log');
+    h.id = 'chTitle';
+    if (recent) h.appendChild(el('span', 'ch-count', String(recent)));
+    head.appendChild(h);
+    if (cards.length > collapsed) head.appendChild(toggle());
+    box.appendChild(head);
+
+    const since = (started ? ` · logging since ${fmtStamp(started.at)}` : '') + (state.logOffline ? ' · offline copy' : '');
+    box.appendChild(el('p', 'ch-sub', cards.length ? `Every edit made in the sheet, newest first${since}` : `No edits yet${since}`));
+
+    const limit = state.logOpen ? Infinity : collapsed;
+    let day = '', group = null, shown = 0;
+    for (const c of cards) {
+      if (shown >= limit) break;
+      const k = keyOf(c.at);
+      if (k !== day) { group = el('div', 'ch-group'); group.appendChild(el('h3', '', dayTitle(k))); box.appendChild(group); day = k; }
+      group.appendChild(logCard(c));
+      shown++;
+    }
+    if (cards.length > collapsed) box.appendChild(toggle());
   }
 
   /* ------------------------------ rendering ------------------------------ */
@@ -610,6 +836,7 @@ date,end_date,time,course,type,title,description,link
         const sub = [e.time, e.course].filter(Boolean).join(' · ');
         if (sub) main.appendChild(el('small', '', sub));
         row.appendChild(main);
+        if (state.fresh.has(e.id)) row.appendChild(el('span', 'tag-new', 'Edited recently'));
         row.addEventListener('click', () => openDialog(e));
         group.appendChild(row);
       }
@@ -682,12 +909,15 @@ date,end_date,time,course,type,title,description,link
     renderChrome();
     renderControls();
     if (state.source === 'error') {
+      $('changes').hidden = true;
       $('cells').replaceChildren();
       $('upcoming').hidden = true;
       $('listBody').replaceChildren();
       $('monthLabel').textContent = `${MONTHS[state.m]} ${state.y}`;
       return;
     }
+    markRecent();
+    renderChanges();
     renderUpcoming();
     renderMonth();
     renderList();
