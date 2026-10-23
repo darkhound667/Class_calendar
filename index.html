@@ -23,6 +23,9 @@
     --no-bg: #e6f4ea;    --no-line: #a8d5b5;    --no-ink: #1e6b3a;
     --ex-bg: #e3f0fb;    --ex-line: #a9cdee;    --ex-ink: #1a5a8a;
     --ev-bg: #f1e8fb;    --ev-line: #cdb4ee;    --ev-ink: #4a2a8c;
+    --exam-bg: #3f2a9c;  --exam-line: #3f2a9c;  --exam-ink: #ffffff;
+    --pr-bg: #fff0dc;    --pr-line: #f0b46e;    --pr-ink: #8a4b00;
+    --ac-bg: #dff5f2;    --ac-line: #8fd3cb;    --ac-ink: #0f6b61;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -42,6 +45,9 @@
       --no-bg: #163324;    --no-line: #2f6b48;    --no-ink: #9be0b5;
       --ex-bg: #14283a;    --ex-line: #2d5c85;    --ex-ink: #9fd0f5;
       --ev-bg: #2a1f3f;    --ev-line: #5b45a0;    --ev-ink: #cdb8ff;
+      --exam-bg: #6a4fd0;  --exam-line: #6a4fd0;  --exam-ink: #ffffff;
+      --pr-bg: #3a2610;    --pr-line: #a86a22;    --pr-ink: #ffc47a;
+      --ac-bg: #0f2f2b;    --ac-line: #2b7a70;    --ac-ink: #8de0d3;
     }
   }
 
@@ -118,7 +124,6 @@
   .ch-act.added   { background: var(--no-bg); border-color: var(--no-line); color: var(--no-ink); }
   .ch-act.removed { background: var(--dl-bg); border-color: var(--dl-line); color: var(--dl-ink); }
   .ch-note { margin: 6px 0 0; font-size: 14px; overflow-wrap: anywhere; }
-  .cellref { margin-left: auto; font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--muted); }
   .ch-diffs { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
   .ch-diffs li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
   .ch-diffs .k { flex: 0 0 62px; color: var(--muted); font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
@@ -149,6 +154,9 @@
   .chip.t-noclass  { background: var(--no-bg);   border-color: var(--no-line);   color: var(--no-ink); }
   .chip.t-extra    { background: var(--ex-bg);   border-color: var(--ex-line);   color: var(--ex-ink); }
   .chip.t-event    { background: var(--ev-bg);   border-color: var(--ev-line);   color: var(--ev-ink); }
+  .chip.t-exam         { background: var(--exam-bg); border-color: var(--exam-line); color: var(--exam-ink); }
+  .chip.t-presentation { background: var(--pr-bg);   border-color: var(--pr-line);   color: var(--pr-ink); }
+  .chip.t-activity     { background: var(--ac-bg);   border-color: var(--ac-line);   color: var(--ac-ink); }
   .chip[aria-pressed="false"] { opacity: .38; }
   .chip.course { border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
   .chip.course[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; opacity: 1; }
@@ -156,6 +164,13 @@
 
   /* ---- month grid ---- */
   .cal { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: var(--shadow); }
+  .month-block + .month-block { margin-top: 24px; }
+  .month-title { margin: 0 0 8px 2px; font-size: 20px; letter-spacing: -.01em; }
+  @keyframes slide-up   { from { transform: translateY(44px);  opacity: .3; } to { transform: none; opacity: 1; } }
+  @keyframes slide-down { from { transform: translateY(-44px); opacity: .3; } to { transform: none; opacity: 1; } }
+  #monthView.slide-up   { animation: slide-up .28s ease-out; }
+  #monthView.slide-down { animation: slide-down .28s ease-out; }
+  @media (prefers-reduced-motion: reduce) { #monthView.slide-up, #monthView.slide-down { animation: none; } }
   .dow, .cells { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .dow > div {
     background: var(--head-bg); color: var(--accent); text-align: center; padding: 12px 0;
@@ -194,6 +209,9 @@
   .pill.t-noclass  { background: var(--no-bg);   border-color: var(--no-line);   color: var(--no-ink); }
   .pill.t-extra    { background: var(--ex-bg);   border-color: var(--ex-line);   color: var(--ex-ink); }
   .pill.t-event    { background: var(--ev-bg);   border-color: var(--ev-line);   color: var(--ev-ink); }
+  .pill.t-exam         { background: var(--exam-bg); border-color: var(--exam-line); color: var(--exam-ink); }
+  .pill.t-presentation { background: var(--pr-bg);   border-color: var(--pr-line);   color: var(--pr-ink); }
+  .pill.t-activity     { background: var(--ac-bg);   border-color: var(--ac-line);   color: var(--ac-ink); }
 
   @media (max-width: 600px) {
     .wrap { padding-top: 16px; }
@@ -218,6 +236,7 @@
     .ch-diffs .k { flex-basis: 100%; }
     .ch-toggle .late { display: none; }
     .cal { border-radius: 18px; }
+    .month-title { font-size: 18px; }
     .up-when { flex-basis: 64px; }
     .up-pills .pill { font-size: 12px; padding: 4px 8px; border-radius: 9px; }
   }
@@ -243,6 +262,9 @@
   .badge.t-noclass  { background: var(--no-bg);   border-color: var(--no-line);   color: var(--no-ink); }
   .badge.t-extra    { background: var(--ex-bg);   border-color: var(--ex-line);   color: var(--ex-ink); }
   .badge.t-event    { background: var(--ev-bg);   border-color: var(--ev-line);   color: var(--ev-ink); }
+  .badge.t-exam         { background: var(--exam-bg); border-color: var(--exam-line); color: var(--exam-ink); }
+  .badge.t-presentation { background: var(--pr-bg);   border-color: var(--pr-line);   color: var(--pr-ink); }
+  .badge.t-activity     { background: var(--ac-bg);   border-color: var(--ac-line);   color: var(--ac-ink); }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; }
 
   /* ---- footer ---- */
@@ -296,12 +318,7 @@
   <div class="chips" id="legend" role="group" aria-label="Filter by type"></div>
   <div class="chips" id="courses" role="group" aria-label="Filter by course"></div>
 
-  <div id="monthView" class="cal">
-    <div class="dow">
-      <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
-    </div>
-    <div class="cells" id="cells"></div>
-  </div>
+  <div id="monthView"></div>
 
   <div id="listView" hidden>
     <div class="list-head"><button type="button" class="text-btn" id="pastBtn">Show past items</button></div>
@@ -367,14 +384,17 @@ date,end_date,time,course,type,title,description,link
   /* ============================================================================= */
 
   const TYPES = {
-    quiz:     { label: 'Quiz',               icon: '✎', order: 0 },
-    deadline: { label: 'Deadline',           icon: '⚑', order: 1 },
-    extra:    { label: 'Extra class',        icon: '+', order: 2 },
-    noclass:  { label: 'No class / holiday', icon: '✕', order: 3 },
-    event:    { label: 'Event',              icon: '★', order: 4 },
+    exam:         { label: 'Exam',               icon: '✍', order: 0 },
+    quiz:         { label: 'Quiz',               icon: '✎', order: 1 },
+    deadline:     { label: 'Deadline',           icon: '⚑', order: 2 },
+    presentation: { label: 'Presentation',       icon: '▶', order: 3 },
+    extra:        { label: 'Extra class',        icon: '+', order: 4 },
+    activity:     { label: 'Activity',           icon: '✦', order: 5 },
+    noclass:      { label: 'No class / holiday', icon: '✕', order: 6 },
+    event:        { label: 'Event',              icon: '★', order: 7 },
   };
-  // Legend order matches the design: Quiz, Deadline, No class, Extra class, Event
-  const LEGEND_ORDER = ['quiz', 'deadline', 'noclass', 'extra', 'event'];
+  // Legend order: the assessment types first, then the rest
+  const LEGEND_ORDER = ['quiz', 'exam', 'deadline', 'presentation', 'activity', 'noclass', 'extra', 'event'];
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const DOW_LONG = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const DOW_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -458,7 +478,10 @@ date,end_date,time,course,type,title,description,link
     if (TYPES[k]) return k;
     if (/no class|noclass|holiday|cancel|off day|break/.test(k)) return 'noclass';
     if (/extra|make ?up|compensat|resched|tutorial/.test(k)) return 'extra';
-    if (/quiz|exam|test|midsem|endsem|mid sem|end sem|viva/.test(k)) return 'quiz';
+    if (/exam|mid ?sem|end ?sem|finals?\b/.test(k)) return 'exam';             // before quiz, so "midsem exam" is an exam
+    if (/quiz|test|viva/.test(k)) return 'quiz';
+    if (/\bpresent|seminar/.test(k)) return 'presentation';
+    if (/activit|workshop|competition|tournament/.test(k)) return 'activity';
     if (/deadline|assign|submi|due|report|\bha\b|hw|homework/.test(k)) return 'deadline';
     return 'event';
   }
@@ -697,8 +720,7 @@ date,end_date,time,course,type,title,description,link
     head.appendChild(el('span', 'ch-time', fmtClock(c.at)));
     head.appendChild(el('span', 'ch-act ' + c.action, ACTION_LABEL[c.action] || c.action));
     head.appendChild(el('span', 'lbl', label || '(untitled)'));
-    if (c.row && !many) head.appendChild(el('span', 'when', `row ${c.row}`));
-    item.appendChild(head);
+    item.appendChild(head);                                          // row/cell numbers are for the sheet owner, not shown here
 
     if (c.action === 'changed') {
       const ul = el('ul', 'ch-diffs');
@@ -708,15 +730,13 @@ date,end_date,time,course,type,title,description,link
         li.appendChild(el('s', '', showVal(e.old)));
         li.appendChild(el('span', 'arrow', '→'));
         li.appendChild(el('b', '', showVal(e.now)));
-        if (e.cell) li.appendChild(el('span', 'cellref', e.cell));
         ul.appendChild(li);
       }
       item.appendChild(ul);
     } else {
       for (const e of c.lines) {
         const body = clip(c.action === 'added' ? e.now : e.old ? `Was: ${e.old}` : '', 300);
-        const where = e.cell ? (many ? `${e.item} (${e.cell})` : `${e.cell}`) : (many ? e.item : '');
-        const text = [where && `${where}:`, body].filter(Boolean).join(' ');
+        const text = [many && `${e.item}:`, body].filter(Boolean).join(' ');
         if (text) item.appendChild(el('p', 'ch-note', text));
       }
     }
@@ -784,7 +804,7 @@ date,end_date,time,course,type,title,description,link
     if (!open) return;
 
     const since = (started ? ` · logging since ${fmtStamp(started.at)}` : '') + (state.logOffline ? ' · offline copy' : '');
-    body.appendChild(el('p', 'ch-sub', cards.length ? `Every edit made in the sheet, newest first${since}` : `No edits yet${since}`));
+    body.appendChild(el('p', 'ch-sub', cards.length ? `Every update to the calendar, newest first${since}` : `No edits yet${since}`));
 
     const limit = state.logOpen ? Infinity : collapsed;
     let day = '', group = null, shown = 0;
@@ -828,27 +848,56 @@ date,end_date,time,course,type,title,description,link
     }
   }
 
-  function renderMonth() {
-    $('monthLabel').textContent = `${MONTHS[state.m]} ${state.y}`;
-    const first = new Date(state.y, state.m, 1);
-    const offset = (first.getDay() + 6) % 7;            // Monday-first
+  // "Oct – Nov 2026" (or "Dec 2026 – Jan 2027") for the two months on screen.
+  function monthRange(y, m) {
+    const n = new Date(y, m + 1, 1);
+    const a = MONTHS[m].slice(0, 3), b = MONTHS[n.getMonth()].slice(0, 3);
+    return n.getFullYear() === y ? `${a} – ${b} ${y}` : `${a} ${y} – ${b} ${n.getFullYear()}`;
+  }
+
+  // One month: a title and a Monday-first grid with only the weeks it needs. Days that belong to the
+  // neighbouring month are shown faint and empty, so an item never appears twice on screen.
+  function monthBlock(y, m) {
+    const block = el('section', 'month-block');
+    block.appendChild(el('h3', 'month-title', `${MONTHS[m]} ${y}`));
+    const cal = el('div', 'cal');
+    const dow = el('div', 'dow');
+    for (const d of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) dow.appendChild(el('div', '', d));
+    cal.appendChild(dow);
+
+    const offset = (new Date(y, m, 1).getDay() + 6) % 7;
+    const weeks = Math.ceil((offset + new Date(y, m + 1, 0).getDate()) / 7);
     const t = todayKey();
-    const frag = document.createDocumentFragment();
-    for (let i = 0; i < 42; i++) {
-      const dt = new Date(state.y, state.m, 1 - offset + i);
+    const cells = el('div', 'cells');
+    for (let i = 0; i < weeks * 7; i++) {
+      const dt = new Date(y, m, 1 - offset + i);
       const k = keyOf(dt);
-      const evs = eventsOn(k);
+      const inMonth = dt.getMonth() === m;
+      const evs = inMonth ? eventsOn(k) : [];
       const cls = ['cell'];
-      if (dt.getMonth() !== state.m) cls.push('out');
+      if (!inMonth) cls.push('out');
       if (evs.length) cls.push('has');
-      if (k === t) cls.push('today');
+      if (k === t && inMonth) cls.push('today');
       if (k < t) cls.push('past');
       const cell = el('div', cls.join(' '));
       cell.appendChild(el('span', 'num', String(dt.getDate())));
       for (const e of evs) cell.appendChild(pill(e));
-      frag.appendChild(cell);
+      cells.appendChild(cell);
     }
-    $('cells').replaceChildren(frag);
+    cal.appendChild(cells);
+    block.appendChild(cal);
+    return block;
+  }
+
+  // Two months are shown at once: the one being browsed and the one after it. Next/previous move by a
+  // single month, so the lower month moves up and a new one appears below.
+  function renderMonth() {
+    $('monthLabel').textContent = monthRange(state.y, state.m);
+    const next = new Date(state.y, state.m + 1, 1);
+    const frag = document.createDocumentFragment();
+    frag.appendChild(monthBlock(state.y, state.m));
+    frag.appendChild(monthBlock(next.getFullYear(), next.getMonth()));
+    $('monthView').replaceChildren(frag);
   }
 
   function renderList() {
@@ -949,10 +998,10 @@ date,end_date,time,course,type,title,description,link
     renderControls();
     if (state.source === 'error') {
       $('changes').hidden = true;
-      $('cells').replaceChildren();
+      $('monthView').replaceChildren();
       $('upcoming').hidden = true;
       $('listBody').replaceChildren();
-      $('monthLabel').textContent = `${MONTHS[state.m]} ${state.y}`;
+      $('monthLabel').textContent = monthRange(state.y, state.m);
       return;
     }
     markRecent();
@@ -1002,9 +1051,16 @@ date,end_date,time,course,type,title,description,link
   /* ------------------------------ wiring ------------------------------ */
   function setMonth(y, m) {
     const d = new Date(y, m, 1);
+    const step = (d.getFullYear() * 12 + d.getMonth()) - (state.y * 12 + state.m);
     state.y = d.getFullYear(); state.m = d.getMonth();
     try { history.replaceState(null, '', `#${state.y}-${pad(state.m + 1)}`); } catch (_) {}
     render();
+    if (step) {                                        // the lower month slides up on "next", down on "previous"
+      const v = $('monthView');
+      v.classList.remove('slide-up', 'slide-down');
+      void v.offsetWidth;
+      v.classList.add(step > 0 ? 'slide-up' : 'slide-down');
+    }
   }
 
   document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => {
