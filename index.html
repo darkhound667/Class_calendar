@@ -343,6 +343,7 @@
     <div class="actions">
       <a class="btn primary" id="dLink" target="_blank" rel="noopener noreferrer" hidden>Open link</a>
       <a class="btn" id="dGcal" target="_blank" rel="noopener noreferrer">Add to Google Calendar</a>
+      <a class="btn" id="dIcs" hidden>Download .ics</a>
       <button type="button" class="btn" id="dClose">Close</button>
     </div>
   </div>
@@ -375,6 +376,7 @@ date,end_date,time,course,type,title,description,link
     // While this is empty the page shows the demo data at the bottom of this file.
     csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vST8fKsJJ5dbj0xhutOtjI-H8gP_6BOjZ52lWI4b4SL1OKvAFNvMIYz5R1a_JxKJSMGKoWK4NDSTuKt/pub?gid=1439807791&single=true&output=csv',
     refreshMinutes: 5,
+    timeZone: 'Asia/Kolkata',   // times in the sheet's "time" column are in this zone when added to a calendar
     // Publish the "Changelog" tab (created by changelog.gs) as CSV and paste its link here.
     // Leave it empty to hide the change log.
     changelogUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vST8fKsJJ5dbj0xhutOtjI-H8gP_6BOjZ52lWI4b4SL1OKvAFNvMIYz5R1a_JxKJSMGKoWK4NDSTuKt/pub?gid=1238233198&single=true&output=csv',
@@ -1012,6 +1014,120 @@ date,end_date,time,course,type,title,description,link
     $('upcoming').hidden = state.view !== 'month';
   }
 
+  /* ------------------------------ calendar export ------------------------------
+     "Add to Google Calendar" and the .ics download share one description, a real start and end time
+     when the time column can be read, and the venue when the details name one. */
+
+  // "5-6 PM", "9.30-10.30 AM", "2-3.30 PM", "11.59 PM", "6.30pm", "19:00" -> { start, end } in minutes after
+  // midnight (end is null for a single time), or null when the text is not a time we can read.
+  function parseTimeRange(text) {
+    const s = String(text || '').trim().toLowerCase().replace(/\b([ap])\.m\.?/g, '$1m').replace(/\s+/g, ' ');
+    const T = '(\\d{1,2})(?:[.:](\\d{2}))?\\s*(am|pm)?';
+    let m = s.match(new RegExp('^' + T + '\\s*(?:-|–|—|to)\\s*' + T + '$'));
+    let a, b = null;
+    if (m) { a = [m[1], m[2], m[3]]; b = [m[4], m[5], m[6]]; }
+    else if ((m = s.match(new RegExp('^' + T + '$')))) a = [m[1], m[2], m[3]];
+    else return null;
+    const merA = a[2] || (b && b[2]) || '';                        // "5-6 PM": both parts take the one AM/PM given
+    const merB = b ? (b[2] || a[2] || '') : '';
+    const mins = (p, mer) => {
+      let h = +p[0]; const mi = +(p[1] || 0);
+      if (h > 24 || mi > 59 || (mer && (h < 1 || h > 12))) return null;
+      if (mer === 'pm' && h < 12) h += 12;
+      if (mer === 'am' && h === 12) h = 0;
+      return h * 60 + mi;
+    };
+    let start = mins(a, merA), end = b ? mins(b, merB) : null;
+    if (start == null || (b && end == null)) return null;
+    if (end != null && end <= start) {
+      // "9-12 AM" means 9 AM-12 PM and "10-1 PM" means 10 AM-1 PM: the shared AM/PM only fits one side.
+      if (end + 720 <= 1440 && end + 720 > start) end += 720;
+      else if (start - 720 >= 0 && start - 720 < end) start -= 720;
+      else return null;
+    }
+    return { start, end };
+  }
+
+  const stamp = (k, min) => {                                       // local "YYYYMMDDTHHMMSS"; minutes may run past midnight
+    const d = dateOf(k); d.setMinutes(min);
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  };
+
+  // { allDay, start, end }: "YYYYMMDD" with an exclusive end for all-day items, else "YYYYMMDDTHHMMSS".
+  function eventWhen(e) {
+    const tr = e.end === e.start ? parseTimeRange(e.time) : null;   // a multi-day item stays all-day
+    if (!tr) return { allDay: true, start: e.start.replace(/-/g, ''), end: addDays(e.end, 1).replace(/-/g, '') };
+    let s = tr.start, f = tr.end;
+    if (f == null) {                                                // only one time given
+      if (e.type === 'deadline' && s >= 30) { f = s; s -= 30; }     // a deadline block ends AT the due time
+      else f = s + (e.type === 'deadline' ? 30 : 60);
+    }
+    return { allDay: false, start: stamp(e.start, s), end: stamp(e.start, f) };
+  }
+
+  // "Venue = computer classroom, ans key = shared" -> "computer classroom". Empty when there is none or it is TBD.
+  function venueOf(e) {
+    const m = /venue\s*[=:]\s*(.+?)(?:\s*[,;]\s*[A-Za-z][A-Za-z ]*\s*[=:]|\s*[;\n]|$)/i.exec(e.description || '');
+    const v = m ? m[1].trim() : '';
+    return v && !/^(tbd|tba|to be announced|-)$/i.test(v) ? v : '';
+  }
+
+  function eventDetails(e) {
+    const url = safeUrl(e.link);
+    const parts = [];
+    if (e.description) parts.push(e.description);
+    const facts = [];
+    if (e.course) facts.push(`Course: ${e.course}`);
+    if (e.time && eventWhen(e).allDay) facts.push(`Time: ${e.time}`);   // a time we could not turn into a real one
+    if (url) facts.push(`Link: ${url}`);
+    if (facts.length) parts.push(facts.join('\n'));
+    if (/^https?:$/.test(location.protocol)) parts.push(`From the batch calendar: ${location.href.split('#')[0]}`);
+    return parts.join('\n\n');
+  }
+
+  function gcalUrl(e) {
+    const w = eventWhen(e), loc = venueOf(e);
+    let u = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+      + '&text=' + encodeURIComponent(e.label)
+      + '&dates=' + w.start + '/' + w.end
+      + '&details=' + encodeURIComponent(eventDetails(e));
+    if (!w.allDay) u += '&ctz=' + encodeURIComponent(CONFIG.timeZone);
+    if (loc) u += '&location=' + encodeURIComponent(loc);
+    return u;
+  }
+
+  const icsEsc = s => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const icsFold = line => { const out = []; let rest = line; while (rest.length > 60) { out.push(rest.slice(0, 60)); rest = ' ' + rest.slice(60); } out.push(rest); return out.join('\r\n'); };
+
+  function icsText(e) {
+    const w = eventWhen(e), loc = venueOf(e), url = safeUrl(e.link);
+    const ist = CONFIG.timeZone === 'Asia/Kolkata';                 // India has no daylight saving, so a fixed block is exact
+    const utcNow = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const uid = e.start + '-' + [...e.label].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) + '@batch-calendar';
+    const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Batch Calendar//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    if (!w.allDay && ist) L.push('BEGIN:VTIMEZONE', 'TZID:Asia/Kolkata', 'BEGIN:STANDARD', 'DTSTART:19700101T000000', 'TZOFFSETFROM:+0530', 'TZOFFSETTO:+0530', 'TZNAME:IST', 'END:STANDARD', 'END:VTIMEZONE');
+    L.push('BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + utcNow, 'SUMMARY:' + icsEsc(e.label));
+    if (w.allDay) L.push('DTSTART;VALUE=DATE:' + w.start, 'DTEND;VALUE=DATE:' + w.end);
+    else { const tz = ist ? ';TZID=Asia/Kolkata' : ''; L.push('DTSTART' + tz + ':' + w.start, 'DTEND' + tz + ':' + w.end); }
+    L.push('DESCRIPTION:' + icsEsc(eventDetails(e)));
+    if (loc) L.push('LOCATION:' + icsEsc(loc));
+    if (url) L.push('URL:' + url);
+    L.push('END:VEVENT', 'END:VCALENDAR');
+    return L.map(icsFold).join('\r\n') + '\r\n';
+  }
+
+  let icsUrl = '';
+  function setIcs(e) {
+    if (icsUrl) { URL.revokeObjectURL(icsUrl); icsUrl = ''; }
+    const a = $('dIcs');
+    try {
+      icsUrl = URL.createObjectURL(new Blob([icsText(e)], { type: 'text/calendar;charset=utf-8' }));
+      a.href = icsUrl;
+      a.download = (e.label.replace(/[^\w\-]+/g, '-').replace(/^-+|-+$/g, '') || 'event') + '.ics';
+      a.hidden = false;
+    } catch (_) { a.hidden = true; }
+  }
+
   /* ------------------------------ dialog ------------------------------ */
   function openDialog(e) {
     const t = TYPES[e.type];
@@ -1038,12 +1154,8 @@ date,end_date,time,course,type,title,description,link
     link.hidden = !url;
     if (url) link.href = url;
 
-    const details = [e.description, e.time && `Time: ${e.time}`, url].filter(Boolean).join('\n');
-    const endExclusive = addDays(e.end, 1).replace(/-/g, '');
-    $('dGcal').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
-      + '&text=' + encodeURIComponent(e.label)
-      + '&dates=' + e.start.replace(/-/g, '') + '/' + endExclusive
-      + '&details=' + encodeURIComponent(details);
+    $('dGcal').href = gcalUrl(e);
+    setIcs(e);
 
     $('dlg').showModal();
   }
