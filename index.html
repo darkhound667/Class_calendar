@@ -3,20 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#fff5f8">
+<meta name="theme-color" content="#ffffff">
 <title>Batch Calendar</title>
 <style>
+  /* Black and white page; only the events (and the type tabs that explain their colours) carry colour. */
   :root {
-    --bg: #fff5f8;
+    color-scheme: light;
+    --bg: #ffffff;
     --surface: #ffffff;
-    --ink: #3a1428;
-    --muted: #a07085;
-    --faint: #dcbccb;
-    --line: #f0cbda;
-    --head-bg: #ffe6ee;
-    --accent: #c2185b;
-    --today: #e0508a;
-    --shadow: 0 1px 2px rgba(194, 24, 91, .08), 0 8px 24px rgba(194, 24, 91, .08);
+    --ink: #111111;
+    --muted: #6f6f6f;
+    --faint: #c4c4c4;
+    --line: #d4d4d4;
+    --head-bg: #f1f1f1;
+    --accent: #111111;
+    --on-accent: #ffffff;
+    --today: #111111;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .06);
+    --warn-bg: #fff3d6;  --warn-line: #f0cf85;  --warn-ink: #7a4b00;
 
     --quiz-bg: #c2185b;  --quiz-line: #c2185b;  --quiz-ink: #ffffff;
     --dl-bg: #ffffff;    --dl-line: #d6407f;    --dl-ink: #a3134f;
@@ -28,17 +32,20 @@
     --ac-bg: #dff5f2;    --ac-line: #8fd3cb;    --ac-ink: #0f6b61;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1c0e16;
-      --surface: #2a1621;
-      --ink: #fbe9f1;
-      --muted: #c598ac;
-      --faint: #6a4457;
-      --line: #4a2a3a;
-      --head-bg: #3a1c2b;
-      --accent: #ff8fba;
-      --today: #e0508a;
-      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #000000;
+      --surface: #0c0c0c;
+      --ink: #f2f2f2;
+      --muted: #a0a0a0;
+      --faint: #4a4a4a;
+      --line: #2e2e2e;
+      --head-bg: #161616;
+      --accent: #f2f2f2;
+      --on-accent: #000000;
+      --today: #f2f2f2;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .6), 0 8px 24px rgba(0, 0, 0, .5);
+      --warn-bg: #3a2c0e;  --warn-line: #7a5a1c;  --warn-ink: #ffd98a;
 
       --quiz-bg: #d81b6a;  --quiz-line: #d81b6a;  --quiz-ink: #ffffff;
       --dl-bg: transparent; --dl-line: #ff7fb0;   --dl-ink: #ffb3d1;
@@ -49,6 +56,30 @@
       --pr-bg: #3a2610;    --pr-line: #a86a22;    --pr-ink: #ffc47a;
       --ac-bg: #0f2f2b;    --ac-line: #2b7a70;    --ac-ink: #8de0d3;
     }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #000000;
+    --surface: #0c0c0c;
+    --ink: #f2f2f2;
+    --muted: #a0a0a0;
+    --faint: #4a4a4a;
+    --line: #2e2e2e;
+    --head-bg: #161616;
+    --accent: #f2f2f2;
+    --on-accent: #000000;
+    --today: #f2f2f2;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .6), 0 8px 24px rgba(0, 0, 0, .5);
+    --warn-bg: #3a2c0e;  --warn-line: #7a5a1c;  --warn-ink: #ffd98a;
+
+    --quiz-bg: #d81b6a;  --quiz-line: #d81b6a;  --quiz-ink: #ffffff;
+    --dl-bg: transparent; --dl-line: #ff7fb0;   --dl-ink: #ffb3d1;
+    --no-bg: #163324;    --no-line: #2f6b48;    --no-ink: #9be0b5;
+    --ex-bg: #14283a;    --ex-line: #2d5c85;    --ex-ink: #9fd0f5;
+    --ev-bg: #2a1f3f;    --ev-line: #5b45a0;    --ev-ink: #cdb8ff;
+    --exam-bg: #6a4fd0;  --exam-line: #6a4fd0;  --exam-ink: #ffffff;
+    --pr-bg: #3a2610;    --pr-line: #a86a22;    --pr-ink: #ffc47a;
+    --ac-bg: #0f2f2b;    --ac-line: #2b7a70;    --ac-ink: #8de0d3;
   }
 
   * { box-sizing: border-box; }
@@ -71,14 +102,13 @@
 
   .seg { display: inline-flex; background: var(--surface); border: 2px solid var(--line); border-radius: 999px; padding: 3px; }
   .seg button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: 14px; color: var(--muted); }
-  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 
   .banner {
     margin: 14px 0 0; padding: 10px 12px; border-radius: 12px; font-size: 14px;
-    background: var(--ex-bg); color: var(--ex-ink); border: 2px solid var(--ex-line);
+    background: var(--head-bg); color: var(--ink); border: 2px solid var(--line);
   }
-  .banner.warn { background: #fff3d6; color: #7a4b00; border-color: #f0cf85; }
-  @media (prefers-color-scheme: dark) { .banner.warn { background: #3a2c0e; color: #ffd98a; border-color: #7a5a1c; } }
+  .banner.warn { background: var(--warn-bg); color: var(--warn-ink); border-color: var(--warn-line); }
 
   /* ---- coming up ---- */
   .upcoming { margin: 20px 0 0; background: var(--surface); border: 2px solid var(--line); border-radius: 18px; padding: 12px 14px; }
@@ -104,7 +134,7 @@
   .ch-body { margin-top: 6px; }
   .ch-count {
     display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; margin-left: 8px;
-    border-radius: 999px; background: var(--today); color: #fff; font-size: 12px; font-weight: 800; vertical-align: 2px;
+    border-radius: 999px; background: var(--today); color: var(--on-accent); font-size: 12px; font-weight: 800; vertical-align: 2px;
   }
   .ch-sub { margin: 2px 0 4px; color: var(--muted); font-size: 13px; }
   .ch-group { margin-top: 10px; }
@@ -120,9 +150,9 @@
   .ch-title.gone .lbl { text-decoration: line-through; color: var(--muted); }
   .ch-time { min-width: 62px; font-size: 13px; font-weight: 700; color: var(--muted); }
   .ch-act { border: 2px solid; border-radius: 8px; padding: 1px 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-  .ch-act.changed { background: var(--ex-bg); border-color: var(--ex-line); color: var(--ex-ink); }
-  .ch-act.added   { background: var(--no-bg); border-color: var(--no-line); color: var(--no-ink); }
-  .ch-act.removed { background: var(--dl-bg); border-color: var(--dl-line); color: var(--dl-ink); }
+  .ch-act.changed { background: transparent; border-color: var(--ink); color: var(--ink); }
+  .ch-act.added   { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .ch-act.removed { background: transparent; border-color: var(--faint); color: var(--muted); }
   .ch-note { margin: 6px 0 0; font-size: 14px; overflow-wrap: anywhere; }
   .ch-diffs { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
   .ch-diffs li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
@@ -159,7 +189,7 @@
   .chip.t-activity     { background: var(--ac-bg);   border-color: var(--ac-line);   color: var(--ac-ink); }
   .chip[aria-pressed="false"] { opacity: .38; }
   .chip.course { border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
-  .chip.course[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; opacity: 1; }
+  .chip.course[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); opacity: 1; }
   .chip.course[aria-pressed="false"] { opacity: 1; }
 
   /* ---- month grid ---- */
@@ -189,7 +219,7 @@
   }
   .cell.has .num { color: var(--ink); }
   .cell.out .num { color: var(--faint); }
-  .cell.today .num { background: var(--today); color: #fff; }
+  .cell.today .num { background: var(--today); color: var(--on-accent); }
   .cell.past .pill { opacity: .55; }
 
   .pill {
@@ -212,7 +242,7 @@
     content: ''; position: absolute; top: -5px; right: -4px; width: 10px; height: 10px; border-radius: 50%;
     background: var(--today); border: 2px solid var(--surface);
   }
-  .tag-new { margin-left: auto; flex: 0 0 auto; background: var(--today); color: #fff; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 800; }
+  .tag-new { margin-left: auto; flex: 0 0 auto; background: var(--today); color: var(--on-accent); border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 800; }
   .pill.t-quiz     { background: var(--quiz-bg); border-color: var(--quiz-line); color: var(--quiz-ink); }
   .pill.t-deadline { background: var(--dl-bg);   border-color: var(--dl-line);   color: var(--dl-ink); }
   .pill.t-noclass  { background: var(--no-bg);   border-color: var(--no-line);   color: var(--no-ink); }
@@ -283,7 +313,7 @@
 
   /* ---- detail dialog ---- */
   dialog { border: 0; padding: 0; border-radius: 22px; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-  dialog::backdrop { background: rgba(58, 20, 40, .45); }
+  dialog::backdrop { background: rgba(0, 0, 0, .5); }
   .sheet { padding: 20px; }
   .sheet h3 { margin: 10px 0 4px; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
   .sheet .meta { color: var(--muted); font-size: 14px; margin: 0; }
@@ -294,8 +324,7 @@
     padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 15px; border: 2px solid var(--line);
     background: var(--surface); color: var(--accent);
   }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  @media (prefers-color-scheme: dark) { .btn.primary { color: #1c0e16; } }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
   [hidden] { display: none !important; }
 </style>
@@ -353,9 +382,7 @@
     <p class="desc" id="dDesc"></p>
     <div class="actions">
       <a class="btn primary" id="dLink" target="_blank" rel="noopener noreferrer" hidden>Open link</a>
-      <a class="btn" id="dGcal" target="_blank" rel="noopener noreferrer">Add to Google Calendar</a>
-      <a class="btn" id="dIcs" hidden>Download .ics</a>
-      <button type="button" class="btn" id="dClose">Close</button>
+      <a class="btn" id="dGcal" target="_blank" rel="noopener noreferrer">Add to Google Calendar</a>      <button type="button" class="btn" id="dClose">Close</button>
     </div>
   </div>
 </dialog>
@@ -1034,8 +1061,8 @@ date,end_date,time,course,type,title,description,link
   }
 
   /* ------------------------------ calendar export ------------------------------
-     "Add to Google Calendar" and the .ics download share one description, a real start and end time
-     when the time column can be read, and the venue when the details name one. */
+     "Add to Google Calendar" gets a description, a real start and end time when the time column can
+     be read, and the venue as the location when the details name one. */
 
   // "5-6 PM", "9.30-10.30 AM", "2-3.30 PM", "11.59 PM", "6.30pm", "19:00" -> { start, end } in minutes after
   // midnight (end is null for a single time), or null when the text is not a time we can read.
@@ -1115,38 +1142,6 @@ date,end_date,time,course,type,title,description,link
     return u;
   }
 
-  const icsEsc = s => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
-  const icsFold = line => { const out = []; let rest = line; while (rest.length > 60) { out.push(rest.slice(0, 60)); rest = ' ' + rest.slice(60); } out.push(rest); return out.join('\r\n'); };
-
-  function icsText(e) {
-    const w = eventWhen(e), loc = venueOf(e), url = safeUrl(e.link);
-    const ist = CONFIG.timeZone === 'Asia/Kolkata';                 // India has no daylight saving, so a fixed block is exact
-    const utcNow = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-    const uid = e.start + '-' + [...e.label].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) + '@batch-calendar';
-    const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Batch Calendar//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
-    if (!w.allDay && ist) L.push('BEGIN:VTIMEZONE', 'TZID:Asia/Kolkata', 'BEGIN:STANDARD', 'DTSTART:19700101T000000', 'TZOFFSETFROM:+0530', 'TZOFFSETTO:+0530', 'TZNAME:IST', 'END:STANDARD', 'END:VTIMEZONE');
-    L.push('BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + utcNow, 'SUMMARY:' + icsEsc(e.label));
-    if (w.allDay) L.push('DTSTART;VALUE=DATE:' + w.start, 'DTEND;VALUE=DATE:' + w.end);
-    else { const tz = ist ? ';TZID=Asia/Kolkata' : ''; L.push('DTSTART' + tz + ':' + w.start, 'DTEND' + tz + ':' + w.end); }
-    L.push('DESCRIPTION:' + icsEsc(eventDetails(e)));
-    if (loc) L.push('LOCATION:' + icsEsc(loc));
-    if (url) L.push('URL:' + url);
-    L.push('END:VEVENT', 'END:VCALENDAR');
-    return L.map(icsFold).join('\r\n') + '\r\n';
-  }
-
-  let icsUrl = '';
-  function setIcs(e) {
-    if (icsUrl) { URL.revokeObjectURL(icsUrl); icsUrl = ''; }
-    const a = $('dIcs');
-    try {
-      icsUrl = URL.createObjectURL(new Blob([icsText(e)], { type: 'text/calendar;charset=utf-8' }));
-      a.href = icsUrl;
-      a.download = (e.label.replace(/[^\w\-]+/g, '-').replace(/^-+|-+$/g, '') || 'event') + '.ics';
-      a.hidden = false;
-    } catch (_) { a.hidden = true; }
-  }
-
   /* ------------------------------ dialog ------------------------------ */
   function openDialog(e) {
     const t = TYPES[e.type];
@@ -1174,7 +1169,6 @@ date,end_date,time,course,type,title,description,link
     if (url) link.href = url;
 
     $('dGcal').href = gcalUrl(e);
-    setIcs(e);
 
     $('dlg').showModal();
   }
