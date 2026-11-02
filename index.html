@@ -198,8 +198,15 @@
     border: 2px solid; border-radius: 10px; font-size: 13px; font-weight: 800; line-height: 1.2;
     overflow-wrap: break-word;
   }
-  .pi { font-weight: 400; white-space: nowrap; }                 /* the 📍 / 📖 markers */
+  /* the small circled "i" on items that show more when tapped */
+  .info {
+    display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+    width: 13px; height: 13px; margin-left: 4px; border: 1.5px solid currentColor; border-radius: 50%;
+    font: italic 700 9px/1 Georgia, "Times New Roman", serif; vertical-align: -2px; opacity: .85;
+  }
+  .row-main .info { width: 15px; height: 15px; font-size: 10px; margin-left: 6px; vertical-align: -1px; }
   .key { margin: 0 0 10px; color: var(--muted); font-size: 12.5px; }
+  .key .info { margin: 0 6px 0 0; vertical-align: -2px; }
   /* dot on anything new or edited since the visitor last marked the changes as seen */
   .pill.fresh::after {
     content: ''; position: absolute; top: -5px; right: -4px; width: 10px; height: 10px; border-radius: 50%;
@@ -235,7 +242,7 @@
     .num { font-size: 14px; min-width: 24px; height: 24px; margin-left: 2px; }
     .pill { font-size: 10px; padding: 3px 3px; border-radius: 7px; border-width: 1.5px; margin-top: 3px; overflow-wrap: break-word; }
     .pill.fresh::after { top: -4px; right: -3px; width: 9px; height: 9px; }
-    .pill .pi { font-size: 9px; }
+    .pill .info { width: 11px; height: 11px; margin-left: 3px; font-size: 8px; border-width: 1.2px; }
     .ch-diffs .k { flex-basis: 100%; }
     .ch-toggle .late { display: none; }
     .cal { border-radius: 18px; }
@@ -320,7 +327,7 @@
 
   <div class="chips" id="legend" role="group" aria-label="Filter by type"></div>
   <div class="chips" id="courses" role="group" aria-label="Filter by course"></div>
-  <p class="key">📍 venue &nbsp;·&nbsp; 📖 portion &nbsp;·&nbsp; tap any item for details</p>
+  <p class="key"><span class="info" aria-hidden="true">i</span>Tap an item with this icon to see more details</p>
 
   <div id="monthView"></div>
 
@@ -618,14 +625,17 @@ date,end_date,time,course,type,title,description,link
     if (text != null) n.textContent = text;
     return n;
   }
+  // An item with a description or a link shows more when tapped; a small circled "i" tells people so.
+  const hasMore = e => !!(e.description || safeUrl(e.link));
+  const infoMark = () => { const i = el('span', 'info', 'i'); i.setAttribute('aria-hidden', 'true'); return i; };
   function pill(e) {
     const fresh = state.fresh.has(e.id);
-    const marks = detailMarks(e);
+    const more = hasMore(e);
     const b = el('button', 'pill t-' + e.type + (fresh ? ' fresh' : ''), e.label);
-    if (marks.text) b.appendChild(el('span', 'pi', ' ' + marks.text));     // 📍 venue / 📖 portion: "there is more behind a tap"
+    if (more) b.appendChild(infoMark());
     b.type = 'button';
-    const notes = [marks.names.length && `has ${marks.names.join(' and ')}`, fresh && 'edited recently'].filter(Boolean);
-    b.title = notes.length ? `${e.label} (${notes.join(', ')}) – tap for details` : e.label;
+    const notes = [more && 'tap for details', fresh && 'edited recently'].filter(Boolean);
+    b.title = notes.length ? `${e.label} (${notes.join(', ')})` : e.label;
     if (notes.length) b.setAttribute('aria-label', `${e.label}, ${notes.join(', ')}`);
     b.addEventListener('click', () => openDialog(e));
     return b;
@@ -930,8 +940,7 @@ date,end_date,time,course,type,title,description,link
         row.appendChild(el('span', 'badge t-' + e.type, `${TYPES[e.type].icon} ${TYPES[e.type].label}`));
         const main = el('span', 'row-main');
         const strong = el('strong', '', e.label);
-        const mk = detailMarks(e);
-        if (mk.text) strong.appendChild(el('span', 'pi', ' ' + mk.text));
+        if (hasMore(e)) strong.appendChild(infoMark());
         main.appendChild(strong);
         const sub = [e.time, e.course].filter(Boolean).join(' · ');
         if (sub) main.appendChild(el('small', '', sub));
@@ -1080,19 +1089,6 @@ date,end_date,time,course,type,title,description,link
     const m = /venue\s*[=:]\s*(.+?)(?:\s*[,;]\s*[A-Za-z][A-Za-z ]*\s*[=:]|\s*[;\n]|$)/i.exec(e.description || '');
     const v = m ? m[1].trim() : '';
     return v && !/^(tbd|tba|to be announced|-)$/i.test(v) ? v : '';
-  }
-
-  // "Portion = chapters 1-5" or "Syllabus = everything till midsem" -> the text. Empty when there is none or it is TBD.
-  function portionOf(e) {
-    const m = /\b(?:portions?|syllabus)\s*[=:]\s*(.+?)(?:\s*[,;]\s*[A-Za-z][A-Za-z ]*\s*[=:]|\s*[;\n]|$)/i.exec(e.description || '');
-    const v = m ? m[1].trim() : '';
-    return v && !/^(tbd|tba|to be announced|-)$/i.test(v) ? v : '';
-  }
-
-  // The little markers shown on an item: 📍 when it has a venue, 📖 when it has a portion.
-  function detailMarks(e) {
-    const venue = !!venueOf(e), portion = !!portionOf(e);
-    return { text: (venue ? '📍' : '') + (portion ? '📖' : ''), names: [venue && 'venue', portion && 'portion'].filter(Boolean) };
   }
 
   function eventDetails(e) {
